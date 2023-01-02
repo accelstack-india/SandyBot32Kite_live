@@ -22,11 +22,12 @@ chatId = "-1001871994988"
 
 
 def connectMysql():
-    # connection = pymysql.connect(host='localhost', port=3306, user='root', password='', db="sandybot32livemock",
+    connection = pymysql.connect(host='localhost', port=3306, user='root', password='', db="sandybot32livemock",
+                                 autocommit=True, max_allowed_packet=67108864)
+    #
+    # connection = pymysql.connect(host='localhost', port=3306, user='root', password='password', db="sandybot32livemock",
     #                              autocommit=True, max_allowed_packet=67108864)
 
-    connection = pymysql.connect(host='localhost', port=3306, user='root', password='password', db="sandybot32livemock",
-                                 autocommit=True, max_allowed_packet=67108864)
     return connection
 
 
@@ -190,9 +191,10 @@ def placeOrderMockTrade(orderType, close, date):
                     (orderType, close, date, 1))
         cur.close()
         base_url = requests.get(
-            "https://api.telegram.org/bot" + telegramToken + "/sendMessage?chat_id=" + chatId + "&text=" + orderType +" NIFTYFUT"+
+            "https://api.telegram.org/bot" + telegramToken + "/sendMessage?chat_id=" + chatId + "&text=" + orderType + " NIFTYFUT" +
             "\nat " + str(close) + "\nFor 30 points" + "\n" + str(date))
-        print("https://api.telegram.org/bot" + telegramToken + "/sendMessage?chat_id=" + chatId + "&text=" + orderType +" NIFTYFUT"+
+        print(
+            "https://api.telegram.org/bot" + telegramToken + "/sendMessage?chat_id=" + chatId + "&text=" + orderType + " NIFTYFUT" +
             "\nat " + str(close) + "\nFor 30 points" + "\n" + str(date))
         print(base_url)
 
@@ -231,9 +233,11 @@ def analyzeBankNiftyFut():
 
 
 def observePositions(currentPrice):
-    print(currentPrice)
-    base_url = requests.get(
-        "https://api.telegram.org/bot" + telegramToken + "/sendMessage?chat_id=" + chatId + "&text="+str(currentPrice))
+    if datetime.datetime.now().minute % 5 == 0 and datetime.datetime.now().second < 10:
+        print(currentPrice, datetime.datetime.now().minute)
+        base_url = requests.get(
+            "https://api.telegram.org/bot" + telegramToken + "/sendMessage?chat_id=" + chatId + "&text=" + str(
+                currentPrice))
     connection = connectMysql()
     cur = connection.cursor()
     cur.execute('SELECT * FROM positionsmock WHERE status = %s', 1)
@@ -247,7 +251,8 @@ def observePositions(currentPrice):
             cur.execute('UPDATE positionsmock SET status = %s WHERE time = %s', (2, existingPos[2]))
             cur.close()
             print("exit in profit")
-            base_url = requests.get("https://api.telegram.org/bot" + telegramToken + "/sendMessage?chat_id=" + chatId + "&text=Target acheived")
+            base_url = requests.get(
+                "https://api.telegram.org/bot" + telegramToken + "/sendMessage?chat_id=" + chatId + "&text=Target acheived")
             print(base_url)
         if existingPos[0] == "SELL" and buyingPrice - currentPrice > 30:
             print("exit in profit")
