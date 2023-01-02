@@ -22,7 +22,10 @@ chatId = "-1001871994988"
 
 
 def connectMysql():
-    connection = pymysql.connect(host='localhost', port=3306, user='root', password='', db="sandybot32livemock",
+    # connection = pymysql.connect(host='localhost', port=3306, user='root', password='', db="sandybot32livemock",
+    #                              autocommit=True, max_allowed_packet=67108864)
+
+    connection = pymysql.connect(host='localhost', port=3306, user='root', password='password', db="sandybot32livemock",
                                  autocommit=True, max_allowed_packet=67108864)
     return connection
 
