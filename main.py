@@ -231,6 +231,9 @@ def analyzeBankNiftyFut():
 
 
 def observePositions(currentPrice):
+    print(currentPrice)
+    base_url = requests.get(
+        "https://api.telegram.org/bot" + telegramToken + "/sendMessage?chat_id=" + chatId + "&text="+str(currentPrice))
     connection = connectMysql()
     cur = connection.cursor()
     cur.execute('SELECT * FROM positionsmock WHERE status = %s', 1)
