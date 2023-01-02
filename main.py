@@ -22,11 +22,11 @@ chatId = "-1001871994988"
 
 
 def connectMysql():
-    # connection = pymysql.connect(host='localhost', port=3306, user='root', password='', db="sandybot32livemock",
-    #                              autocommit=True, max_allowed_packet=67108864)
-    #
-    connection = pymysql.connect(host='localhost', port=3306, user='root', password='password', db="sandybot32livemock",
+    connection = pymysql.connect(host='localhost', port=3306, user='root', password='', db="sandybot32livemock",
                                  autocommit=True, max_allowed_packet=67108864)
+
+    # connection = pymysql.connect(host='localhost', port=3306, user='root', password='password', db="sandybot32livemock",
+    #                              autocommit=True, max_allowed_packet=67108864)
 
     return connection
 
@@ -201,21 +201,23 @@ def placeOrderMockTrade(orderType, close, date):
 
 def analyzeCrossOvers(crossOverIndicatorsDf):
     observePositions(crossOverIndicatorsDf.iloc[-1].close)
-    if crossOverIndicatorsDf.iloc[-1].SUPERTREND_CROSS == 1 and crossOverIndicatorsDf.iloc[-1].MACD_CROSS == 1:
-        placeOrderMockTrade("BUY", crossOverIndicatorsDf.iloc[-1].close, crossOverIndicatorsDf.iloc[-1].date)
-    elif crossOverIndicatorsDf.iloc[-1].SUPERTREND_CROSS == -1 and crossOverIndicatorsDf.iloc[-1].MACD_CROSS == -1:
-        placeOrderMockTrade("SELL", crossOverIndicatorsDf.iloc[-1].close, crossOverIndicatorsDf.iloc[-1].date)
-    else:
-        if crossOverIndicatorsDf.iloc[-1].SUPERTREND_CROSS == 1:
-            for j in range(-1, -1 - 7, -1):
-                if crossOverIndicatorsDf.iloc[j].MACD_CROSS == 1:
-                    placeOrderMockTrade("BUY", crossOverIndicatorsDf.iloc[-1].close,
-                                        crossOverIndicatorsDf.iloc[-1].date)
-        if crossOverIndicatorsDf.iloc[-1].SUPERTREND_CROSS == -1:
-            for j in range(-1, -1 - 7, -1):
-                if crossOverIndicatorsDf.iloc[j].MACD_CROSS == -1:
-                    placeOrderMockTrade("SELL", crossOverIndicatorsDf.iloc[-1].close,
-                                        crossOverIndicatorsDf.iloc[-1].date)
+    if datetime.datetime.now().minute % 5 == 0 and 10 < datetime.datetime.now().second < 20:
+        print("every 5 min", datetime.datetime.now().second, crossOverIndicatorsDf.iloc[-1].date)
+        if crossOverIndicatorsDf.iloc[-1].SUPERTREND_CROSS == 1 and crossOverIndicatorsDf.iloc[-1].MACD_CROSS == 1:
+            placeOrderMockTrade("BUY", crossOverIndicatorsDf.iloc[-1].close, crossOverIndicatorsDf.iloc[-1].date)
+        elif crossOverIndicatorsDf.iloc[-1].SUPERTREND_CROSS == -1 and crossOverIndicatorsDf.iloc[-1].MACD_CROSS == -1:
+            placeOrderMockTrade("SELL", crossOverIndicatorsDf.iloc[-1].close, crossOverIndicatorsDf.iloc[-1].date)
+        else:
+            if crossOverIndicatorsDf.iloc[-1].SUPERTREND_CROSS == 1:
+                for j in range(-1, -1 - 7, -1):
+                    if crossOverIndicatorsDf.iloc[j].MACD_CROSS == 1:
+                        placeOrderMockTrade("BUY", crossOverIndicatorsDf.iloc[-1].close,
+                                            crossOverIndicatorsDf.iloc[-1].date)
+            if crossOverIndicatorsDf.iloc[-1].SUPERTREND_CROSS == -1:
+                for j in range(-1, -1 - 7, -1):
+                    if crossOverIndicatorsDf.iloc[j].MACD_CROSS == -1:
+                        placeOrderMockTrade("SELL", crossOverIndicatorsDf.iloc[-1].close,
+                                            crossOverIndicatorsDf.iloc[-1].date)
 
 
 def analyzeNiftyFut():
