@@ -193,16 +193,12 @@ def placeOrderMockTrade(orderType, close, date):
         base_url = requests.get(
             "https://api.telegram.org/bot" + telegramToken + "/sendMessage?chat_id=" + chatId + "&text=" + orderType + " NIFTYFUT" +
             "\nat " + str(close) + "\nFor 30 points" + "\n" + str(date))
-        print(
-            "https://api.telegram.org/bot" + telegramToken + "/sendMessage?chat_id=" + chatId + "&text=" + orderType + " NIFTYFUT" +
-            "\nat " + str(close) + "\nFor 30 points" + "\n" + str(date))
         print(base_url)
 
 
 def analyzeCrossOvers(crossOverIndicatorsDf):
     observePositions(crossOverIndicatorsDf.iloc[-1].close)
     if datetime.datetime.now().minute % 5 == 0 and 10 < datetime.datetime.now().second < 20:
-        print("every 5 min", datetime.datetime.now().second, crossOverIndicatorsDf.iloc[-1].date)
         if crossOverIndicatorsDf.iloc[-1].SUPERTREND_CROSS == 1 and crossOverIndicatorsDf.iloc[-1].MACD_CROSS == 1:
             placeOrderMockTrade("BUY", crossOverIndicatorsDf.iloc[-1].close, crossOverIndicatorsDf.iloc[-1].date)
         elif crossOverIndicatorsDf.iloc[-1].SUPERTREND_CROSS == -1 and crossOverIndicatorsDf.iloc[-1].MACD_CROSS == -1:
@@ -235,11 +231,6 @@ def analyzeBankNiftyFut():
 
 
 def observePositions(currentPrice):
-    if datetime.datetime.now().minute % 5 == 0 and datetime.datetime.now().second < 10:
-        print(currentPrice, datetime.datetime.now().minute)
-        base_url = requests.get(
-            "https://api.telegram.org/bot" + telegramToken + "/sendMessage?chat_id=" + chatId + "&text=" + str(
-                currentPrice))
     connection = connectMysql()
     cur = connection.cursor()
     cur.execute('SELECT * FROM positionsmock WHERE status = %s', 1)
