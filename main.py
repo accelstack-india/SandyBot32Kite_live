@@ -1,10 +1,13 @@
 import pyotp
+
+from constants import fut_insert_query, opt_insert_query
 from kite_trade import *
 import datetime
 import pandas as pd
 import pandas_ta as ta
 import pymysql
 import requests
+import socket
 
 pd.options.mode.chained_assignment = None
 
@@ -20,12 +23,11 @@ kitePassword = "pooja@#123"
 telegramToken = "5664182614:AAG6-knt9P9whHXgD6XD887yzf0cmB_oJwY"
 chatId = "-1001871994988"
 
-
 def connectMysql():
     # connection = pymysql.connect(host='localhost', port=3306, user='root', password='', db="sandybot32livemock",
     #                              autocommit=True, max_allowed_packet=67108864)
     #
-    connection = pymysql.connect(host='localhost', port=3306, user='root', password='password', db="sandybot32livemock",
+    connection = pymysql.connect(host='localhost', port=3306, user='root', password='', db="sandybot32livemock",
                                  autocommit=True, max_allowed_packet=67108864)
 
     return connection
@@ -84,6 +86,8 @@ def getHistoricalData(instrumentToken):
     from_datetime = datetime.datetime.now() - datetime.timedelta(days=15)  # From last & days
     to_datetime = datetime.datetime.now()
     interval = "5minute"
+    print("------------")
+    print(instrumentToken)
     return kite.historical_data(instrumentToken, from_datetime, to_datetime, interval, continuous=False, oi=False)
 
 
@@ -178,7 +182,36 @@ def calculateIndicatorCrossOvers(dfIndicators):
     return dfIndicators
 
 
+def getNearbyoption(orderType, close, instument):
+    today = datetime.date.today()
+    if instument == "NIFTY" and orderType == "BUY":
+        connection = connectMysql()
+        cur = connection.cursor()
+        nearest_strike_price = (close // 50) * 50
+        higher_strike_price = ((close // 50) + 1) * 50
+        cur.execute("SELECT * FROM indexopt_instrument_data WHERE tradingsymbol LIKE %s AND strike = %s",("NIFTY%ce",higher_strike_price))
+        allInstrument = cur.fetchall()
+        filtered_data = [d for d in allInstrument if d[6] >= today]
+        sorted_data = sorted(filtered_data, key=lambda x: x[6])
+        upcoming_contract = sorted_data[0]
+        return upcoming_contract[2]
+    if instument == "NIFTY" and orderType == "SELL":
+        connection = connectMysql()
+        cur = connection.cursor()
+        nearest_strike_price = (close // 50) * 50
+        higher_strike_price = ((close // 50) + 1) * 50
+        cur.execute("SELECT * FROM indexopt_instrument_data WHERE tradingsymbol LIKE %s AND strike = %s",("NIFTY%pe",nearest_strike_price))
+        allInstrument = cur.fetchall()
+        filtered_data = [d for d in allInstrument if d[6] >= today]
+        sorted_data = sorted(filtered_data, key=lambda x: x[6])
+        upcoming_contract = sorted_data[0]
+        return upcoming_contract[2]
+
+
+
 def placeOrderMockTrade(orderType, close, date):
+    socket_main = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    socket_main.connect(('localhost', 9999))
     connection = connectMysql()
     cur = connection.cursor()
     cur.execute('SELECT * FROM positionsmock WHERE status = %s and orderType = %s', (1, orderType))
@@ -194,10 +227,15 @@ def placeOrderMockTrade(orderType, close, date):
             "https://api.telegram.org/bot" + telegramToken + "/sendMessage?chat_id=" + chatId + "&text=" + orderType + " NIFTYFUT" +
             "\nat " + str(close) + "\nFor 30 points" + "\n" + str(date))
         print(base_url)
+        # get nearby option
+        # send to socket
+        option = getNearbyoption(orderType,close,"NIFTY")
+        socket_main.send(option.encode())
+        socket_main.close()
 
 
 def analyzeCrossOvers(crossOverIndicatorsDf):
-    observePositions(crossOverIndicatorsDf.iloc[-1].close)
+    # observePositions(crossOverIndicatorsDf.iloc[-1].close)
     if datetime.datetime.now().minute % 5 == 0 and 10 < datetime.datetime.now().second < 20:
         if crossOverIndicatorsDf.iloc[-1].SUPERTREND_CROSS == 1 and crossOverIndicatorsDf.iloc[-1].MACD_CROSS == 1:
             placeOrderMockTrade("BUY", crossOverIndicatorsDf.iloc[-1].close, crossOverIndicatorsDf.iloc[-1].date)
@@ -216,9 +254,21 @@ def analyzeCrossOvers(crossOverIndicatorsDf):
                                             crossOverIndicatorsDf.iloc[-1].date)
 
 
+def getCurrnetExpiryToken(indextype):
+    today = datetime.date.today()
+    connection = connectMysql()
+    cur = connection.cursor()
+    cur.execute('SELECT * FROM indexfut_instrument_data')
+    allInstrument = cur.fetchall()
+    filtered_data = [d for d in allInstrument if d[6] >= today and d[3].startswith(indextype)]
+    sorted_data = sorted(filtered_data, key=lambda x: x[6])
+    upcoming_contract = sorted_data[0]
+    return upcoming_contract[1]
+
+
 def analyzeNiftyFut():
     while True:
-        dfIndicators = calculateIndicators(getHistoricalData(instrumentTokenNiftyFut))
+        dfIndicators = calculateIndicators(getHistoricalData(getCurrnetExpiryToken('NIFTY')))
         crossOverIndicatorsDf = calculateIndicatorCrossOvers(dfIndicators)
         crossOverIndicatorsDf.to_csv("NIFTY.csv")
         analyzeCrossOvers(crossOverIndicatorsDf)
@@ -258,6 +308,56 @@ def observePositions(currentPrice):
             print(base_url)
 
 
+def segrigateIndexNFOInstruments(nfoList):
+    for instrument in nfoList:
+        if instrument['tradingsymbol'].startswith('NIFTY') and instrument['tradingsymbol'].endswith('FUT'):
+            print(instrument)
+            connection = connectMysql()
+            cur = connection.cursor()
+            cur.execute(fut_insert_query, instrument)
+            cur.close()
+        elif instrument['tradingsymbol'].startswith('BANKNIFTY') and instrument['tradingsymbol'].endswith('FUT'):
+            print(instrument)
+            connection = connectMysql()
+            cur = connection.cursor()
+            cur.execute(fut_insert_query, instrument)
+            cur.close()
+        elif instrument['tradingsymbol'].startswith('NIFTY') and instrument['tradingsymbol'].endswith('CE'):
+            connection = connectMysql()
+            cur = connection.cursor()
+            cur.execute(opt_insert_query, instrument)
+            cur.close()
+        elif instrument['tradingsymbol'].startswith('NIFTY') and instrument['tradingsymbol'].endswith('PE'):
+            connection = connectMysql()
+            cur = connection.cursor()
+            cur.execute(opt_insert_query, instrument)
+            cur.close()
+        elif instrument['tradingsymbol'].startswith('BANKNIFTY') and instrument['tradingsymbol'].endswith('CE'):
+            connection = connectMysql()
+            cur = connection.cursor()
+            cur.execute(opt_insert_query, instrument)
+            cur.close()
+        elif instrument['tradingsymbol'].startswith('BANKNIFTY') and instrument['tradingsymbol'].endswith('PE'):
+            connection = connectMysql()
+            cur = connection.cursor()
+            cur.execute(opt_insert_query, instrument)
+            cur.close()
+    pass
+
+
+def socketTest():
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_address = ('localhost', 9999)
+    client_socket.connect(server_address)
+    data = input()
+    client_socket.sendall(data.encode())
+    client_socket.close()
+
+
 if __name__ == '__main__':
-    analyzeNiftyFut()
-    # print(getNFOInstruments())
+    socketTest()
+    # analyzeNiftyFut()
+    # print(getCurrnetExpiryToken('BANKNIFTY'))
+    # segrigateIndexNFOInstruments(getNFOInstruments())
+    # getNearbyoption("SELL", 17999, "NIFTY")
+
