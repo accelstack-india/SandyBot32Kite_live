@@ -23,6 +23,7 @@ kitePassword = "pooja@#123"
 telegramToken = "5664182614:AAG6-knt9P9whHXgD6XD887yzf0cmB_oJwY"
 chatId = "-1001871994988"
 
+
 def connectMysql():
     # connection = pymysql.connect(host='localhost', port=3306, user='root', password='', db="sandybot32livemock",
     #                              autocommit=True, max_allowed_packet=67108864)
@@ -189,7 +190,8 @@ def getNearbyoption(orderType, close, instument):
         cur = connection.cursor()
         nearest_strike_price = (close // 50) * 50
         higher_strike_price = ((close // 50) + 1) * 50
-        cur.execute("SELECT * FROM indexopt_instrument_data WHERE tradingsymbol LIKE %s AND strike = %s",("NIFTY%ce",higher_strike_price))
+        cur.execute("SELECT * FROM indexopt_instrument_data WHERE tradingsymbol LIKE %s AND strike = %s",
+                    ("NIFTY%ce", higher_strike_price))
         allInstrument = cur.fetchall()
         filtered_data = [d for d in allInstrument if d[6] >= today]
         sorted_data = sorted(filtered_data, key=lambda x: x[6])
@@ -200,13 +202,13 @@ def getNearbyoption(orderType, close, instument):
         cur = connection.cursor()
         nearest_strike_price = (close // 50) * 50
         higher_strike_price = ((close // 50) + 1) * 50
-        cur.execute("SELECT * FROM indexopt_instrument_data WHERE tradingsymbol LIKE %s AND strike = %s",("NIFTY%pe",nearest_strike_price))
+        cur.execute("SELECT * FROM indexopt_instrument_data WHERE tradingsymbol LIKE %s AND strike = %s",
+                    ("NIFTY%pe", nearest_strike_price))
         allInstrument = cur.fetchall()
         filtered_data = [d for d in allInstrument if d[6] >= today]
         sorted_data = sorted(filtered_data, key=lambda x: x[6])
         upcoming_contract = sorted_data[0]
         return upcoming_contract[2]
-
 
 
 def placeOrderMockTrade(orderType, close, date):
@@ -229,7 +231,7 @@ def placeOrderMockTrade(orderType, close, date):
         print(base_url)
         # get nearby option
         # send to socket
-        option = getNearbyoption(orderType,close,"NIFTY")
+        option = getNearbyoption(orderType, close, "NIFTY")
         socketTest(option)
 
 
@@ -370,4 +372,3 @@ if __name__ == '__main__':
     # print(getCurrnetExpiryToken('BANKNIFTY'))
     # segrigateIndexNFOInstruments(getNFOInstruments())
     # getNearbyoption("SELL", 17999, "NIFTY")
-
