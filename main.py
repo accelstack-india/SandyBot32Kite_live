@@ -230,8 +230,7 @@ def placeOrderMockTrade(orderType, close, date):
         # get nearby option
         # send to socket
         option = getNearbyoption(orderType,close,"NIFTY")
-        socket_main.send(option.encode())
-        socket_main.close()
+        socketTest(option)
 
 
 def analyzeCrossOvers(crossOverIndicatorsDf):
@@ -345,17 +344,28 @@ def segrigateIndexNFOInstruments(nfoList):
     pass
 
 
-def socketTest():
-    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_address = ('localhost', 9999)
-    client_socket.connect(server_address)
-    data = input()
-    client_socket.sendall(data.encode())
-    client_socket.close()
+def socketTest(option):
+    option = getNearbyoption("BUY", 18020, "NIFTY")
+    # Set up the address and port to send to
+    RECEIVER_ADDRESS = 'localhost'
+    RECEIVER_PORT = 12345
+
+    # Create a socket object
+    sender_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+    # Connect to the receiver
+    sender_socket.connect((RECEIVER_ADDRESS, RECEIVER_PORT))
+
+    # Send some data to the receiver
+    data = option.encode()
+    sender_socket.sendall(data)
+
+    # Close the socket
+    sender_socket.close()
 
 
 if __name__ == '__main__':
-    socketTest()
+    socketTest(12345)
     # analyzeNiftyFut()
     # print(getCurrnetExpiryToken('BANKNIFTY'))
     # segrigateIndexNFOInstruments(getNFOInstruments())
