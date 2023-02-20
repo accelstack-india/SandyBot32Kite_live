@@ -1,3 +1,5 @@
+import json
+
 import pyotp
 
 from constants import fut_insert_query, opt_insert_query
@@ -87,8 +89,6 @@ def getHistoricalData(instrumentToken):
     from_datetime = datetime.datetime.now() - datetime.timedelta(days=15)  # From last & days
     to_datetime = datetime.datetime.now()
     interval = "5minute"
-    print("------------")
-    print(instrumentToken)
     return kite.historical_data(instrumentToken, from_datetime, to_datetime, interval, continuous=False, oi=False)
 
 
@@ -196,7 +196,7 @@ def getNearbyoption(orderType, close, instument):
         filtered_data = [d for d in allInstrument if d[6] >= today]
         sorted_data = sorted(filtered_data, key=lambda x: x[6])
         upcoming_contract = sorted_data[0]
-        return upcoming_contract[2]
+        return upcoming_contract[3]
     if instument == "NIFTY" and orderType == "SELL":
         connection = connectMysql()
         cur = connection.cursor()
@@ -208,7 +208,7 @@ def getNearbyoption(orderType, close, instument):
         filtered_data = [d for d in allInstrument if d[6] >= today]
         sorted_data = sorted(filtered_data, key=lambda x: x[6])
         upcoming_contract = sorted_data[0]
-        return upcoming_contract[2]
+        return upcoming_contract[3]
 
 
 def placeOrderMockTrade(orderType, close, date):
@@ -231,8 +231,8 @@ def placeOrderMockTrade(orderType, close, date):
         print(base_url)
         # get nearby option
         # send to socket
-        option = getNearbyoption(orderType, close, "NIFTY")
-        socketTest(option)
+        optionName = getNearbyoption(orderType, close, "NIFTY")
+        socketTest(optionName,orderType)
 
 
 def analyzeCrossOvers(crossOverIndicatorsDf):
@@ -271,7 +271,7 @@ def analyzeNiftyFut():
     while True:
         dfIndicators = calculateIndicators(getHistoricalData(getCurrnetExpiryToken('NIFTY')))
         crossOverIndicatorsDf = calculateIndicatorCrossOvers(dfIndicators)
-        crossOverIndicatorsDf.to_csv("NIFTY.csv")
+        # crossOverIndicatorsDf.to_csv("NIFTY.csv")
         analyzeCrossOvers(crossOverIndicatorsDf)
 
 
@@ -346,8 +346,13 @@ def segrigateIndexNFOInstruments(nfoList):
     pass
 
 
-def socketTest(option):
-    option = getNearbyoption("BUY", 18020, "NIFTY")
+def socketTest(option,orderType):
+    print("--------------------------")
+    print(orderType)
+    print(option)
+    print("gotacall")
+    print("--------------------------")
+    # option = getNearbyoption("BUY", 18020, "NIFTY")
     # Set up the address and port to send to
     RECEIVER_ADDRESS = 'localhost'
     RECEIVER_PORT = 12345
@@ -358,17 +363,35 @@ def socketTest(option):
     # Connect to the receiver
     sender_socket.connect((RECEIVER_ADDRESS, RECEIVER_PORT))
 
-    # Send some data to the receiver
-    data = option.encode()
-    sender_socket.sendall(data)
+    # # Send some data to the receiver
+    # data = option.encode()
+    # sender_socket.sendall(data)
+    #
+    # # Close the socket
+    # sender_socket.close()
 
-    # Close the socket
+    option = [
+        {"type": "Future", "tradingsymbol": option, "transaction_type": orderType, "trigger_price": None,
+         "squareoff": None, "stoploss": None},
+        {"type": "Options", "tradingsymbol": option, "transaction_type": orderType, "trigger_price": None,
+         "squareoff": None, "stoploss": None}]
+    json_string = json.dumps(option)
+    # Create a socket object
+    # sender_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+    # Connect to the receiver
+    # sender_socket.connect((RECEIVER_ADDRESS, RECEIVER_PORT))
+
+    # Send some data to the receiver
+    data = json_string.encode()
+    sender_socket.sendall(data)
     sender_socket.close()
 
 
 if __name__ == '__main__':
-    socketTest(12345)
-    # analyzeNiftyFut()
+    # print(placeOrder())
+    # socketTest(12345)
+    analyzeNiftyFut()
     # print(getCurrnetExpiryToken('BANKNIFTY'))
     # segrigateIndexNFOInstruments(getNFOInstruments())
     # getNearbyoption("SELL", 17999, "NIFTY")
