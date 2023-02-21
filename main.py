@@ -246,7 +246,7 @@ def placeOrderMockTrade(orderType, close, date,InstrumentType):
                     (orderType, close, date, 1))
         cur.close()
         optionName = getNearbyoption(orderType, close, InstrumentType)
-        socketTest(optionName, orderType)
+        socketTest(optionName, orderType,InstrumentType)
 
 
 def analyzeCrossOvers(crossOverIndicatorsDf,InstrumentType):
@@ -254,9 +254,9 @@ def analyzeCrossOvers(crossOverIndicatorsDf,InstrumentType):
     # observePositions(crossOverIndicatorsDf.iloc[-1].close)
     if datetime.datetime.now().minute % 5 == 0 and 10 < datetime.datetime.now().second < 20:
         if crossOverIndicatorsDf.iloc[-1].SUPERTREND_CROSS == 1 and crossOverIndicatorsDf.iloc[-1].MACD_CROSS == 1:
-            placeOrderMockTrade("BUY", crossOverIndicatorsDf.iloc[-1].close, crossOverIndicatorsDf.iloc[-1].date)
+            placeOrderMockTrade("BUY", crossOverIndicatorsDf.iloc[-1].close, crossOverIndicatorsDf.iloc[-1].date,InstrumentType)
         elif crossOverIndicatorsDf.iloc[-1].SUPERTREND_CROSS == -1 and crossOverIndicatorsDf.iloc[-1].MACD_CROSS == -1:
-            placeOrderMockTrade("SELL", crossOverIndicatorsDf.iloc[-1].close, crossOverIndicatorsDf.iloc[-1].date)
+            placeOrderMockTrade("SELL", crossOverIndicatorsDf.iloc[-1].close, crossOverIndicatorsDf.iloc[-1].date,InstrumentType)
         else:
             if crossOverIndicatorsDf.iloc[-1].SUPERTREND_CROSS == 1:
                 for j in range(-1, -1 - 7, -1):
@@ -344,7 +344,7 @@ def segrigateIndexNFOInstruments(nfoList):
     pass
 
 
-def socketTest(option, orderType):
+def socketTest(option, orderType,instrumentType):
     RECEIVER_ADDRESS = 'localhost'
     RECEIVER_PORT = 12345
     sender_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -360,7 +360,7 @@ def socketTest(option, orderType):
     sender_socket.close()
 
 
-def analyzeNiftyFut():
+def analyzeIndexFut():
     while True:
         # NIFTY HERE
         dfIndicators = calculateIndicators(getHistoricalData(instrumentTokenNiftyFut))
@@ -375,4 +375,4 @@ def analyzeNiftyFut():
 
 
 if __name__ == '__main__':
-    analyzeNiftyFut()
+    analyzeIndexFut()
