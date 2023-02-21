@@ -1,5 +1,6 @@
 import json
 import time
+import subprocess
 
 import pyotp
 
@@ -374,5 +375,15 @@ def analyzeNiftyFut():
         analyzeCrossOvers(crossOverIndicatorsDf, "BANKNIFTY")
 
 
+def check_subprocessor():
+    option = [{"type": "Options", "tradingsymbol": "ACC", "transaction_type": "SELL", "trigger_price": None,
+         "squareoff": None, "stoploss": None}]
+    json_string = json.dumps(option)
+    print("------------Main program is calling middelwear by providing the stock for trading-------------------")
+    while True:
+        subprocess.Popen(['python', "middlewear.py", json_string])
+
+
 if __name__ == '__main__':
-    analyzeNiftyFut()
+    check_subprocessor()
+    # analyzeNiftyFut()
