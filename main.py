@@ -1,4 +1,5 @@
 import json
+import time
 
 import pyotp
 
@@ -13,17 +14,10 @@ import socket
 
 pd.options.mode.chained_assignment = None
 
-instrumentTokenNiftyFut = 8972290
-instrumentTokenBankNiftyFut = 8972034
-
 totpToken = "E6O4KPIAJ35QMZDLSEVUZL42MJUDHPFO"
 
 kiteClientId = "XL0940"
 kitePassword = "pooja@#123"
-
-# Telegram cred
-telegramToken = "5664182614:AAG6-knt9P9whHXgD6XD887yzf0cmB_oJwY"
-chatId = "-1001871994988"
 
 
 def connectMysql():
@@ -211,7 +205,33 @@ def getNearbyoption(orderType, close, instument):
         return upcoming_contract[3]
 
 
-def placeOrderMockTrade(orderType, close, date):
+    if instument == "BANKNIFTY" and orderType == "BUY":
+        connection = connectMysql()
+        cur = connection.cursor()
+        nearest_strike_price = (close // 50) * 50
+        higher_strike_price = ((close // 50) + 1) * 50
+        cur.execute("SELECT * FROM indexopt_instrument_data WHERE tradingsymbol LIKE %s AND strike = %s",
+                    ("BANKNIFTY%ce", higher_strike_price))
+        allInstrument = cur.fetchall()
+        filtered_data = [d for d in allInstrument if d[6] >= today]
+        sorted_data = sorted(filtered_data, key=lambda x: x[6])
+        upcoming_contract = sorted_data[0]
+        return upcoming_contract[3]
+    if instument == "BANKNIFTY" and orderType == "SELL":
+        connection = connectMysql()
+        cur = connection.cursor()
+        nearest_strike_price = (close // 50) * 50
+        higher_strike_price = ((close // 50) + 1) * 50
+        cur.execute("SELECT * FROM indexopt_instrument_data WHERE tradingsymbol LIKE %s AND strike = %s",
+                    ("BANKNIFTY%pe", nearest_strike_price))
+        allInstrument = cur.fetchall()
+        filtered_data = [d for d in allInstrument if d[6] >= today]
+        sorted_data = sorted(filtered_data, key=lambda x: x[6])
+        upcoming_contract = sorted_data[0]
+        return upcoming_contract[3]
+
+
+def placeOrderMockTrade(orderType, close, date,InstrumentType):
     socket_main = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     socket_main.connect(('localhost', 9999))
     connection = connectMysql()
@@ -225,17 +245,12 @@ def placeOrderMockTrade(orderType, close, date):
         cur.execute('INSERT INTO positionsmock (orderType,orderPrice,time,status) VALUES (%s,%s,%s,%s)',
                     (orderType, close, date, 1))
         cur.close()
-        base_url = requests.get(
-            "https://api.telegram.org/bot" + telegramToken + "/sendMessage?chat_id=" + chatId + "&text=" + orderType + " NIFTYFUT" +
-            "\nat " + str(close) + "\nFor 30 points" + "\n" + str(date))
-        print(base_url)
-        # get nearby option
-        # send to socket
-        optionName = getNearbyoption(orderType, close, "NIFTY")
-        socketTest(optionName,orderType)
+        optionName = getNearbyoption(orderType, close, InstrumentType)
+        socketTest(optionName, orderType)
 
 
-def analyzeCrossOvers(crossOverIndicatorsDf):
+def analyzeCrossOvers(crossOverIndicatorsDf,InstrumentType):
+    print(InstrumentType)
     # observePositions(crossOverIndicatorsDf.iloc[-1].close)
     if datetime.datetime.now().minute % 5 == 0 and 10 < datetime.datetime.now().second < 20:
         if crossOverIndicatorsDf.iloc[-1].SUPERTREND_CROSS == 1 and crossOverIndicatorsDf.iloc[-1].MACD_CROSS == 1:
@@ -247,12 +262,12 @@ def analyzeCrossOvers(crossOverIndicatorsDf):
                 for j in range(-1, -1 - 7, -1):
                     if crossOverIndicatorsDf.iloc[j].MACD_CROSS == 1:
                         placeOrderMockTrade("BUY", crossOverIndicatorsDf.iloc[-1].close,
-                                            crossOverIndicatorsDf.iloc[-1].date)
+                                            crossOverIndicatorsDf.iloc[-1].date,InstrumentType)
             if crossOverIndicatorsDf.iloc[-1].SUPERTREND_CROSS == -1:
                 for j in range(-1, -1 - 7, -1):
                     if crossOverIndicatorsDf.iloc[j].MACD_CROSS == -1:
                         placeOrderMockTrade("SELL", crossOverIndicatorsDf.iloc[-1].close,
-                                            crossOverIndicatorsDf.iloc[-1].date)
+                                            crossOverIndicatorsDf.iloc[-1].date,InstrumentType)
 
 
 def getCurrnetExpiryToken(indextype):
@@ -267,19 +282,8 @@ def getCurrnetExpiryToken(indextype):
     return upcoming_contract[1]
 
 
-def analyzeNiftyFut():
-    while True:
-        dfIndicators = calculateIndicators(getHistoricalData(getCurrnetExpiryToken('NIFTY')))
-        crossOverIndicatorsDf = calculateIndicatorCrossOvers(dfIndicators)
-        # crossOverIndicatorsDf.to_csv("NIFTY.csv")
-        analyzeCrossOvers(crossOverIndicatorsDf)
-
-
-def analyzeBankNiftyFut():
-    dfIndicators = calculateIndicators(getHistoricalData(instrumentTokenBankNiftyFut))
-    crossOverIndicatorsDf = calculateIndicatorCrossOvers(dfIndicators)
-    crossOverIndicatorsDf.to_csv("BANKNIFTY.csv")
-
+instrumentTokenNiftyFut = getCurrnetExpiryToken('NIFTY')
+instrumentTokenBankNiftyFut = getCurrnetExpiryToken('BANKNIFTY')
 
 def observePositions(currentPrice):
     connection = connectMysql()
@@ -295,18 +299,12 @@ def observePositions(currentPrice):
             cur.execute('UPDATE positionsmock SET status = %s WHERE time = %s', (2, existingPos[2]))
             cur.close()
             print("exit in profit")
-            base_url = requests.get(
-                "https://api.telegram.org/bot" + telegramToken + "/sendMessage?chat_id=" + chatId + "&text=Target acheived")
-            print(base_url)
         if existingPos[0] == "SELL" and buyingPrice - currentPrice > 30:
             print("exit in profit")
             connection = connectMysql()
             cur = connection.cursor()
             cur.execute('UPDATE positionsmock SET status = %s WHERE time = %s', (2, existingPos[2]))
             cur.close()
-            base_url = requests.get(
-                "https://api.telegram.org/bot" + telegramToken + "/sendMessage?chat_id=" + chatId + "&text=Target acheived")
-            print(base_url)
 
 
 def segrigateIndexNFOInstruments(nfoList):
@@ -346,52 +344,35 @@ def segrigateIndexNFOInstruments(nfoList):
     pass
 
 
-def socketTest(option,orderType):
-    print("--------------------------")
-    print(orderType)
-    print(option)
-    print("gotacall")
-    print("--------------------------")
-    # option = getNearbyoption("BUY", 18020, "NIFTY")
-    # Set up the address and port to send to
+def socketTest(option, orderType):
     RECEIVER_ADDRESS = 'localhost'
     RECEIVER_PORT = 12345
-
-    # Create a socket object
     sender_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-    # Connect to the receiver
     sender_socket.connect((RECEIVER_ADDRESS, RECEIVER_PORT))
-
-    # # Send some data to the receiver
-    # data = option.encode()
-    # sender_socket.sendall(data)
-    #
-    # # Close the socket
-    # sender_socket.close()
-
     option = [
         {"type": "Future", "tradingsymbol": option, "transaction_type": orderType, "trigger_price": None,
          "squareoff": None, "stoploss": None},
         {"type": "Options", "tradingsymbol": option, "transaction_type": orderType, "trigger_price": None,
          "squareoff": None, "stoploss": None}]
     json_string = json.dumps(option)
-    # Create a socket object
-    # sender_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-    # Connect to the receiver
-    # sender_socket.connect((RECEIVER_ADDRESS, RECEIVER_PORT))
-
-    # Send some data to the receiver
     data = json_string.encode()
     sender_socket.sendall(data)
     sender_socket.close()
 
 
+def analyzeNiftyFut():
+    while True:
+        # NIFTY HERE
+        dfIndicators = calculateIndicators(getHistoricalData(instrumentTokenNiftyFut))
+        crossOverIndicatorsDf = calculateIndicatorCrossOvers(dfIndicators)
+        analyzeCrossOvers(crossOverIndicatorsDf, "NIFTY")
+        # SLEEP NOW
+        time.sleep(1)
+        # BANKNIFTY HERE
+        dfIndicators = calculateIndicators(getHistoricalData(instrumentTokenBankNiftyFut))
+        crossOverIndicatorsDf = calculateIndicatorCrossOvers(dfIndicators)
+        analyzeCrossOvers(crossOverIndicatorsDf, "BANKNIFTY")
+
+
 if __name__ == '__main__':
-    # print(placeOrder())
-    # socketTest(12345)
     analyzeNiftyFut()
-    # print(getCurrnetExpiryToken('BANKNIFTY'))
-    # segrigateIndexNFOInstruments(getNFOInstruments())
-    # getNearbyoption("SELL", 17999, "NIFTY")
