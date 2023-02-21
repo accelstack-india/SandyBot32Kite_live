@@ -9,7 +9,6 @@ import datetime
 import pandas as pd
 import pandas_ta as ta
 import pymysql
-import requests
 import socket
 
 pd.options.mode.chained_assignment = None
@@ -204,7 +203,6 @@ def getNearbyoption(orderType, close, instument):
         upcoming_contract = sorted_data[0]
         return upcoming_contract[3]
 
-
     if instument == "BANKNIFTY" and orderType == "BUY":
         connection = connectMysql()
         cur = connection.cursor()
@@ -231,7 +229,7 @@ def getNearbyoption(orderType, close, instument):
         return upcoming_contract[3]
 
 
-def placeOrderMockTrade(orderType, close, date,InstrumentType):
+def placeOrderMockTrade(orderType, close, date, InstrumentType):
     socket_main = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     socket_main.connect(('localhost', 9999))
     connection = connectMysql()
@@ -246,28 +244,29 @@ def placeOrderMockTrade(orderType, close, date,InstrumentType):
                     (orderType, close, date, 1))
         cur.close()
         optionName = getNearbyoption(orderType, close, InstrumentType)
-        socketTest(optionName, orderType,InstrumentType)
+        socketTest(optionName, orderType, InstrumentType)
 
 
-def analyzeCrossOvers(crossOverIndicatorsDf,InstrumentType):
-    print(InstrumentType)
+def analyzeCrossOvers(crossOverIndicatorsDf, InstrumentType):
     # observePositions(crossOverIndicatorsDf.iloc[-1].close)
     if datetime.datetime.now().minute % 5 == 0 and 10 < datetime.datetime.now().second < 20:
         if crossOverIndicatorsDf.iloc[-1].SUPERTREND_CROSS == 1 and crossOverIndicatorsDf.iloc[-1].MACD_CROSS == 1:
-            placeOrderMockTrade("BUY", crossOverIndicatorsDf.iloc[-1].close, crossOverIndicatorsDf.iloc[-1].date,InstrumentType)
+            placeOrderMockTrade("BUY", crossOverIndicatorsDf.iloc[-1].close, crossOverIndicatorsDf.iloc[-1].date,
+                                InstrumentType)
         elif crossOverIndicatorsDf.iloc[-1].SUPERTREND_CROSS == -1 and crossOverIndicatorsDf.iloc[-1].MACD_CROSS == -1:
-            placeOrderMockTrade("SELL", crossOverIndicatorsDf.iloc[-1].close, crossOverIndicatorsDf.iloc[-1].date,InstrumentType)
+            placeOrderMockTrade("SELL", crossOverIndicatorsDf.iloc[-1].close, crossOverIndicatorsDf.iloc[-1].date,
+                                InstrumentType)
         else:
             if crossOverIndicatorsDf.iloc[-1].SUPERTREND_CROSS == 1:
                 for j in range(-1, -1 - 7, -1):
                     if crossOverIndicatorsDf.iloc[j].MACD_CROSS == 1:
                         placeOrderMockTrade("BUY", crossOverIndicatorsDf.iloc[-1].close,
-                                            crossOverIndicatorsDf.iloc[-1].date,InstrumentType)
+                                            crossOverIndicatorsDf.iloc[-1].date, InstrumentType)
             if crossOverIndicatorsDf.iloc[-1].SUPERTREND_CROSS == -1:
                 for j in range(-1, -1 - 7, -1):
                     if crossOverIndicatorsDf.iloc[j].MACD_CROSS == -1:
                         placeOrderMockTrade("SELL", crossOverIndicatorsDf.iloc[-1].close,
-                                            crossOverIndicatorsDf.iloc[-1].date,InstrumentType)
+                                            crossOverIndicatorsDf.iloc[-1].date, InstrumentType)
 
 
 def getCurrnetExpiryToken(indextype):
@@ -284,6 +283,7 @@ def getCurrnetExpiryToken(indextype):
 
 instrumentTokenNiftyFut = getCurrnetExpiryToken('NIFTY')
 instrumentTokenBankNiftyFut = getCurrnetExpiryToken('BANKNIFTY')
+
 
 def observePositions(currentPrice):
     connection = connectMysql()
@@ -344,7 +344,7 @@ def segrigateIndexNFOInstruments(nfoList):
     pass
 
 
-def socketTest(option, orderType,instrumentType):
+def socketTest(option, orderType, instrumentType):
     RECEIVER_ADDRESS = 'localhost'
     RECEIVER_PORT = 12345
     sender_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
