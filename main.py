@@ -11,6 +11,7 @@ import pandas_ta as ta
 import pymysql
 import socket
 import winsound
+import subprocess
 
 pd.options.mode.chained_assignment = None
 
@@ -257,7 +258,7 @@ def placeOrderMockTrade(orderType, close, date, InstrumentType):
                     (orderType, close, date, 1))
         cur.close()
         optionName = getNearbyoption(orderType, close, InstrumentType)
-        socketTest(optionName, orderType, InstrumentType)
+        subProcessExecuter(optionName, orderType, InstrumentType)
 
 
 def analyzeCrossOvers(crossOverIndicatorsDf, InstrumentType):
@@ -358,7 +359,7 @@ def segrigateIndexNFOInstruments(nfoList):
     pass
 
 
-def socketTest(option, orderType, instrumentType):
+def subProcessExecuter(option, orderType, instrumentType):
     frequency = 2500  # Set Frequency To 2500 Hertz
     duration = 3000  # Set Duration To 1000 ms == 1 second
     winsound.Beep(frequency, duration)
@@ -367,20 +368,13 @@ def socketTest(option, orderType, instrumentType):
     print(orderType)
     print(instrumentType)
     print("_________________________GOT ORDER______________________")
-    # RECEIVER_ADDRESS = 'localhost'
-    # RECEIVER_PORT = 12345
-    # sender_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    # sender_socket.connect((RECEIVER_ADDRESS, RECEIVER_PORT))
-    # option = [
-    #     {"type": "Future", "tradingsymbol": option, "transaction_type": orderType, "trigger_price": None,
-    #      "squareoff": None, "stoploss": None},
-    #     {"type": "Options", "tradingsymbol": option, "transaction_type": orderType, "trigger_price": None,
-    #      "squareoff": None, "stoploss": None}]
-    # json_string = json.dumps(option)
-    # data = json_string.encode()
-    # sender_socket.sendall(data)
-    # sender_socket.close()
 
+    option = [{"type": "Options", "tradingsymbol": option, "transaction_type": orderType, "trigger_price": None,
+               "squareoff": None, "stoploss": None}]
+    json_string = json.dumps(option)
+    print("------------Main program is calling middelwear by providing the stock for trading-------------------")
+    while True:
+        subprocess.Popen(['python', "middleware.py", json_string])
 
 def analyzeIndexFut():
     while True:
