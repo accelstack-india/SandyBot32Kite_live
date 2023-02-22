@@ -199,8 +199,13 @@ def getNearbyoption(orderType, close, instument):
         cur.execute("SELECT * FROM indexopt_instrument_data WHERE tradingsymbol LIKE %s AND strike = %s",
                     ("NIFTY%pe", nearest_strike_price))
         allInstrument = cur.fetchall()
+        print("NIS")
+        print(higher_strike_price)
+        print(allInstrument)
         filtered_data = [d for d in allInstrument if d[6] >= today]
+        print(filtered_data)
         sorted_data = sorted(filtered_data, key=lambda x: x[6])
+        print(sorted_data)
         upcoming_contract = sorted_data[0]
         return upcoming_contract[3]
 
@@ -212,9 +217,14 @@ def getNearbyoption(orderType, close, instument):
         cur.execute("SELECT * FROM indexopt_instrument_data WHERE tradingsymbol LIKE %s AND strike = %s",
                     ("BANKNIFTY%ce", higher_strike_price))
         allInstrument = cur.fetchall()
+        print("BNB")
+        print(higher_strike_price)
         filtered_data = [d for d in allInstrument if d[6] >= today]
+        print(filtered_data)
         sorted_data = sorted(filtered_data, key=lambda x: x[6])
+        print(sorted_data)
         upcoming_contract = sorted_data[0]
+        print(upcoming_contract)
         return upcoming_contract[3]
     if instument == "BANKNIFTY" and orderType == "SELL":
         connection = connectMysql()
@@ -224,15 +234,17 @@ def getNearbyoption(orderType, close, instument):
         cur.execute("SELECT * FROM indexopt_instrument_data WHERE tradingsymbol LIKE %s AND strike = %s",
                     ("BANKNIFTY%pe", nearest_strike_price))
         allInstrument = cur.fetchall()
+        print("BNS")
+        print(nearest_strike_price)
         filtered_data = [d for d in allInstrument if d[6] >= today]
+        print(filtered_data)
         sorted_data = sorted(filtered_data, key=lambda x: x[6])
+        print(sorted_data)
         upcoming_contract = sorted_data[0]
         return upcoming_contract[3]
 
 
 def placeOrderMockTrade(orderType, close, date, InstrumentType):
-    socket_main = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    socket_main.connect(('localhost', 9999))
     connection = connectMysql()
     cur = connection.cursor()
     cur.execute('SELECT * FROM positionsmock WHERE status = %s and orderType = %s', (1, orderType))
@@ -249,6 +261,7 @@ def placeOrderMockTrade(orderType, close, date, InstrumentType):
 
 
 def analyzeCrossOvers(crossOverIndicatorsDf, InstrumentType):
+    print(InstrumentType)
     # observePositions(crossOverIndicatorsDf.iloc[-1].close)
     if datetime.datetime.now().minute % 5 == 0 and 10 < datetime.datetime.now().second < 20:
         if crossOverIndicatorsDf.iloc[-1].SUPERTREND_CROSS == 1 and crossOverIndicatorsDf.iloc[-1].MACD_CROSS == 1:
@@ -384,4 +397,13 @@ def analyzeIndexFut():
 
 
 if __name__ == '__main__':
-    analyzeIndexFut()
+    while True:
+        try:
+            analyzeIndexFut()
+        except Exception as e:
+            print("Error:", e)
+            continue
+
+        else:
+            print("Program finished successfully.")
+            break
