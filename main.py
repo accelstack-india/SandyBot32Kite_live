@@ -380,8 +380,7 @@ def check_placeOrder_subprocessor():
          "squareoff": None, "stoploss": None}]
     json_string = json.dumps(option)
     print("------------Main program is calling middelwear to place order by providing the stock for trading-------------------")
-    while True:
-        subprocess.Popen(['python', "placeOrder_middlewear.py", json_string])
+    subprocess.Popen(['python', "placeOrder_middlewear.py", json_string])
 
 
 def check_exitOrder_subprocessor():
@@ -389,13 +388,14 @@ def check_exitOrder_subprocessor():
                "squareoff": None, "stoploss": None}]
     json_string = json.dumps(option)
     print("------------Main program is calling middelwear to exit order by providing the stock for trading-------------------")
-    while True:
-        subprocess.Popen(['python', "exitOrder_middlewear.py", json_string])
-    pass
+    subprocess.Popen(['python', "exitOrder_middlewear.py", json_string])
 
 
 if __name__ == '__main__':
     # check_placeOrder_subprocessor()
     check_exitOrder_subprocessor()
+    time.sleep(100)
+    print("Done sleeping!")
+
     # analyzeNiftyFut()
 

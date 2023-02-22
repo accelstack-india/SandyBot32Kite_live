@@ -36,7 +36,7 @@ kite = KiteApp(enctoken=get_enctoken(kite_client_id, kite_password, getRefreshTo
 # get the positions for the user
 def getPositions():
     return kite.positions()
-
+print(getPositions())
 # place the order for the user
 # def placeOrder():
 #     order = kite.place_order(variety="GTT",
