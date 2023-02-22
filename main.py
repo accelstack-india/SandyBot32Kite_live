@@ -375,15 +375,27 @@ def analyzeNiftyFut():
         analyzeCrossOvers(crossOverIndicatorsDf, "BANKNIFTY")
 
 
-def check_subprocessor():
+def check_placeOrder_subprocessor():
     option = [{"type": "Options", "tradingsymbol": "ACC", "transaction_type": "SELL", "trigger_price": None,
          "squareoff": None, "stoploss": None}]
     json_string = json.dumps(option)
-    print("------------Main program is calling middelwear by providing the stock for trading-------------------")
+    print("------------Main program is calling middelwear to place order by providing the stock for trading-------------------")
     while True:
-        subprocess.Popen(['python', "middlewear.py", json_string])
+        subprocess.Popen(['python', "placeOrder_middlewear.py", json_string])
+
+
+def check_exitOrder_subprocessor():
+    option = [{"type": "Options", "tradingsymbol": "ACC", "transaction_type": "SELL", "trigger_price": None,
+               "squareoff": None, "stoploss": None}]
+    json_string = json.dumps(option)
+    print("------------Main program is calling middelwear to exit order by providing the stock for trading-------------------")
+    while True:
+        subprocess.Popen(['python', "exitOrder_middlewear.py", json_string])
+    pass
 
 
 if __name__ == '__main__':
-    check_subprocessor()
+    # check_placeOrder_subprocessor()
+    check_exitOrder_subprocessor()
     # analyzeNiftyFut()
+

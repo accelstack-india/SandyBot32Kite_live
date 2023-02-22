@@ -13,7 +13,7 @@ def connectMysql():
 
 class userController:
     @classmethod
-    def get_OptionalTradeUsers(cls,tradeSegment):
+    def get_subscribedUsers(cls,tradeSegment):
 
         connection = connectMysql()
         cur = connection.cursor()
