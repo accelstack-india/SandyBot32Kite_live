@@ -392,8 +392,8 @@ def check_exitOrder_subprocessor():
 
 
 if __name__ == '__main__':
-    # check_placeOrder_subprocessor()
-    check_exitOrder_subprocessor()
+    check_placeOrder_subprocessor()
+    # check_exitOrder_subprocessor()
     time.sleep(100)
     print("Done sleeping!")
 

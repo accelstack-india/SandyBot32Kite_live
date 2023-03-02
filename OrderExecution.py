@@ -1,5 +1,7 @@
 import sys
 import json
+# import requests
+
 from kite_trade import *
 import pyotp
 
@@ -52,5 +54,10 @@ def placeOrder():
                              tag="TradeViaPython")
     return order
 
+# # Place order through API
+# endpoint = "http://127.0.0.1:5000/placeOrder"
+# data = {"kite_client_id": kite_client_id, "kite_password": kite_password, "totp_token": TOTP_token, "trade_symbol":trading_symbol}
+# response = requests.post(endpoint, json=data)
+# print(response.text)
 
 print(placeOrder())
